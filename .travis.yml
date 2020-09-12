@@ -6,5 +6,5 @@ python:
     - 3.7  
 before_install:
   - "python3 -V"
-  - "python3 -m http.server --directory test/"
+  - "python3 -m http.server --directory test/ &"
   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost/test.html &
