@@ -1,6 +1,9 @@
 dist: xenial
 addons:
   chrome: stable
+language: python
+python:
+    - 3.7  
 before_install:
   - "python3 -V"
   - "python3 -m http.server --directory test/"
