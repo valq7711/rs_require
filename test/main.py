@@ -25,6 +25,6 @@ def run_srv():
 t = Thread(target=run_srv)
 t.daemon = True
 t.start()
-t.join()
+#t.join()
 
 
