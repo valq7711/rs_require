@@ -13,6 +13,7 @@ def err():
 
 def shutdown():
     print('shutdown')
+    server.srv.server_close() 
     server.srv.shutdown()
 
 server = WSGIRefServer(port=8000, host='127.0.0.1')
