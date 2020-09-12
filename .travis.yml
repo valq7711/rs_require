@@ -5,8 +5,8 @@ language: python
 python:
     - 3.7  
 before_install:
+  - "curl https://raw.githubusercontent.com/bottlepy/bottle/master/bottle.py --output test/bottle.py"
   - python3 -V
-  - pip3 install bottle
   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://127.0.0.1:8000/static/test.html &
 script:
     - python3 test/main.py 
