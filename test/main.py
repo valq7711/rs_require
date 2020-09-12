@@ -12,19 +12,23 @@ def err():
     shutdown()
     
 def shutdown():
-    print('shutdown')
-    server.srv.server_close() 
-    server.srv.shutdown()
+    #server.srv.server_close() 
+    #server.srv.shutdown()
     sys.exit('error')
 
 server = WSGIRefServer(port=8000, host='127.0.0.1')
 
 def run_srv():
-    run(server=server, debug=True)
+    try:
+        run(server=server, debug=True)
+    except Exception:    
+        print('shutdown')
+        server.srv.server_close() 
+        server.srv.shutdown()
 
 t = Thread(target=run_srv)
 t.daemon = True
 t.start()
-#t.join()
+t.join()
 
 
