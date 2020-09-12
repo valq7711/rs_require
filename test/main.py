@@ -15,7 +15,7 @@ def shutdown():
     print('shutdown')
     server.srv.server_close() 
     server.srv.shutdown()
-    sys.exit(1)
+    sys.exit('error')
 
 server = WSGIRefServer(port=8000, host='127.0.0.1')
 run(server=server, debug=True)
