@@ -7,6 +7,6 @@ python:
 before_install:
   - python3 -V
   - pip3 install bottle
-  - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://127.0.0.1:8000/test.html &
+  - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://127.0.0.1:8000/static/test.html &
 script:
     - python3 test/main.py 
