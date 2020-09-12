@@ -1,6 +1,6 @@
 from bottle import route, run, static_file, request, WSGIRefServer
 from threading import Thread
-import os
+import os, sys
 
 @route('/static/<filename>')
 def server_static(filename):
@@ -15,6 +15,7 @@ def shutdown():
     print('shutdown')
     server.srv.server_close() 
     server.srv.shutdown()
+    sys.exit(1)
 
 server = WSGIRefServer(port=8000, host='127.0.0.1')
 run(server=server, debug=True)
