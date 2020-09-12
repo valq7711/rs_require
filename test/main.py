@@ -10,6 +10,7 @@ def server_static(filename):
 def err():
     print(request.json)
     t = Thread(target=shutdown)
+    t.daemon = True
     t.start()
     t.join()
     sys.exit('error')
