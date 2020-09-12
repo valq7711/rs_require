@@ -8,4 +8,4 @@ before_install:
   - python3 -V
   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://127.0.0.1:8000/test.html &
 script:
-    - python3 -m http.server 8000 --bind 127.0.0.1 --directory test/ &
+    - python3 -m http.server 8000 --bind 127.0.0.1 --directory test/
