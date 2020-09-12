@@ -2,21 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Mocha Tests 1</title>
+    <title>test</title>
   </head>
   <body>
-    <div id="mocha"></div>
-
-    <script src="https://unpkg.com/chai/chai.js"></script>
-    <script src="https://unpkg.com/mocha/mocha.js"></script>
-
-    <script class="mocha-init">
-      mocha.setup('bdd');
-      mocha.checkLeaks();
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error){
+            axios.post('../err', {msg, url, lineNo});
+            return false;
+        }
     </script>
     <script src="foo.js"></script>
-    <script class="mocha-exec">
-      mocha.run();
-    </script>
   </body>
 </html>
