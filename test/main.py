@@ -15,5 +15,5 @@ def shutdown():
     print('shutdown')
     server.srv.shutdown()
 
-server = WSGIRefServer(port=80)
-run(server=server, host='127.0.0.1', port=8000, debug=True)
+server = WSGIRefServer(port=8000, host='127.0.0.1')
+run(server=server, debug=True)
