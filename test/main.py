@@ -18,10 +18,10 @@ def shutdown():
 
 server = WSGIRefServer(port=8000, host='127.0.0.1')
 
-def run():
+def run_srv():
     run(server=server, debug=True)
 
-t = Thread(target=run)
+t = Thread(target=run_srv)
 t.daemon = True
 t.start()
 t.join()
