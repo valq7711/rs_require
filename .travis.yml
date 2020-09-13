@@ -9,7 +9,7 @@ node_js:
 before_install:
   #- npm install rapydscript -g
   #- rapydscript rs_require.pyj -6 -p -m -o rs_require.js 
-   - |
+  - |
       if ! git diff --name-only ${TRAVIS_COMMIT_RANGE} | grep -qvE '(\.md$)|^(LICENSE)|^(\.gitignore$)|^(package\.json)'
       then
         echo "No code updates, cancel CI"
