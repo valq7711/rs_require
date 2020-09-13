@@ -11,7 +11,7 @@ def err():
     print(request.json)
     print('shutdown1')
     #sys.exit()
-    raise SystemExit('error')
+    raise KeyboardInterrupt() #SystemExit('error')
     
 
 server = WSGIRefServer(port=8000, host='127.0.0.1')
