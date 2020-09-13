@@ -20,7 +20,7 @@ server = WSGIRefServer(port=8000, host='127.0.0.1')
 
 def run_srv():
     try:
-        run(server=server, debug=True)
+        run(server=server)
     except Exception:    
         print('shutdown')
         server.srv.server_close() 
