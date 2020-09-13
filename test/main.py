@@ -9,8 +9,6 @@ def server_static(filename):
 @route('/err', method = 'POST')
 def err():
     print(request.json)
-    @server.srv.server_close() 
-    @server.srv.shutdown()
     print('shutdown1')
     sys.exit()
     
@@ -22,7 +20,8 @@ def run_srv():
         run(server=server)
     except Exception:
         pass
-    #server.srv.server_close() 
+    server.srv.server_close() 
+    server.srv.shutdown()
     print('shutdown')
     
 
