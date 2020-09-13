@@ -9,6 +9,9 @@ node_js:
 before_install:
   - npm install rapydscript -g
   - rapydscript rs_require.pyj -6 -p -m -o rs_require.js 
+  - git add rs_require.js
+  - git commit -a -m "build"
+  - git push
   - "curl https://raw.githubusercontent.com/bottlepy/bottle/master/bottle.py --output test/bottle.py"
   - python3 -V
   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://127.0.0.1:8000/static/test.html &
