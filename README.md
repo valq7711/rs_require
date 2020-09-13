@@ -5,6 +5,7 @@ rs_require
 
 Simple amd-loader written on [Rapydscript](https://github.com/atsepkov/RapydScript). 
 
+
 Usage:
 ```html
 ...
