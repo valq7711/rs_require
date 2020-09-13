@@ -1,19 +1,11 @@
 RS_REQ = 'amd'
+VERSION = '1.0.0'
 
 def parse_imports(args):
     path = []
-    _path = []
-    def push_path(p):
-        nonlocal path, _path
-        path.push(p)
-        if v'typeof p' == 'string':
-            _path.push(p)
-        else:
-            _path.push.apply(_path, Object.keys(p))
-
     args.forEach(def(it):
         if v'typeof it' == 'string':
-            push_path(it)
+            path.push(it)
         else: # it is object
             it = Object.assign({}, it)
             from_ = /(.*?)\/?$/.exec(it['from'] or '')[1]
@@ -22,7 +14,7 @@ def parse_imports(args):
             if it['import'] and Array.isArray(it['import']):
                 it['import'].forEach(def(p):
                     p = p.startsWith('/') ? p : from_ + p
-                    push_path(p)
+                    path.push(p)
                 )
             else: # {import: {Vue:'vue', ...} }
                 imports = it['import'] or it
@@ -37,10 +29,9 @@ def parse_imports(args):
                         alias = p
                     p = p.startsWith('/') ? p : from_ + p
                     pack[p] = alias
-                push_path(pack)
+                path.push(pack)
     )
-    return [path, _path]
-
+    return path
 
 
 class Module:
@@ -55,11 +46,21 @@ class Module:
         self.id = v'typeof def_args[0]' == 'string' \
             ? def_args.shift() \
             : ''
-        raw_deps = Array.isArray(def_args[0]) \
+        # if def_args[0].call -> is Array or hash
+        raw_deps = (not def_args[0].call) \
             ? def_args.shift() \
             : []
+
         self.init = def_args[0]
-        self.import_amd(raw_deps, self.path).then(self.run.bind(self)).catch(def(e): self.ok_err.err(e);)
+        self.import_amd(raw_deps, self.path).then(self.run.bind(self))
+        .catch(def(e):
+            if self.ok_err:
+                self.ok_err.err(e)
+            else:
+                if window.onerror:
+                    window.onerror(e.message, None, None, None, e)
+                raise e
+        )
 
     def on_load_script(self, ok_err):
         self.ok_err = ok_err
@@ -68,35 +69,26 @@ class Module:
 
     def run(self, deps):
         exports = None
-        deps = deps.map(def(dep):
-            nonlocal exports
-            if dep is 'exports':
-                exports = {}
-                return exports
-            return  dep
-        )
+        deps = Array.isArray(deps) \
+            ? deps.map(def(dep):
+                nonlocal exports
+                if dep is 'exports':
+                    exports = {}
+                    return exports
+                return  dep
+            ) \
+            : [deps]
         _exports = self.init.apply(None, deps)
         self.exports = exports or _exports
         self.loaded = True
         if self.ok_err:
             self.ok_err.ok(self.exports)
 
-
-def doc_ready(arg_to_pass):
-    p = def(ok, err):
-        document.addEventListener('readystatechange',def():
-            if document.readyState == 'complete':
-                ok(arg_to_pass);
-        )
-    if document.readyState == 'complete':
-        return Promise.resolve(arg_to_pass)
-    return Promise(p)
-
 class RS_require:
     def __init__(self):
         CS = document.currentScript
-        src_ = CS.src.split('/')
-        self.config = {base_url:src_[:-1].join('/'), map:{}, path:{}}
+        base_src = CS.dataset.main and CS.dataset.main.split('/') or CS.src.split('/')
+        self.config = {base_url:base_src[:-1].join('/'), map:{}, path:{}}
         self.modules = {}
         self._modules = []
         define = window.define = self.define.bind(self)
@@ -105,19 +97,13 @@ class RS_require:
 
         rs_req = def(requester):
             return {
-                'self': self,
+                'version': VERSION,
                 'import': def(args):
                     return self.import_amd(args, requester)
-                'asyncer': asyncer,
                 'config': def(cfg): Object.assign(self.config, cfg);
             }
         self.mount_module(RS_REQ, rs_req)
-        if window.Q:
-            self.mount_module('Q', Q)
-            del window.Q
         if CS.dataset.main:
-            base_url = CS.dataset.main.split('/')
-            self.config.base_url = base_url[:-1].join('/')
             self.import_amd(CS.dataset.main, RS_REQ)
 
     def resolve_path(self, requester, path):
@@ -186,11 +172,15 @@ class RS_require:
         console.log('error on load: ', name, requester)
 
     def import_amd(self, import_args, requester):
+        as_one_pack = False
         if v'typeof import_args' == 'string':
             #imps = [import_args]
             return self._import_amd(import_args, requester)
-        else:
-            imps = parse_imports(import_args)[0]
+        elif not Array.isArray(import_args): # Object
+            as_one_pack = True
+            import_args = [import_args]
+
+        imps = parse_imports(import_args)
         p = []
         imps.forEach(def(it):
             if v'typeof it' == 'string':
@@ -212,9 +202,20 @@ class RS_require:
                 path = ''
                 for v'path in it':
                     _pack.push(self._import_amd(path, requester))
-                p.push(Promise.all(_pack).then(pack_maker(it)))
+                p.push(Promise.all(_pack).then(pack_maker(it)).catch(
+                    def(e):
+                        if isinstance(e, Error):
+                            raise e;
+                        else:
+                            if v'typeof e' == 'string' :
+                                err = new Error(e)
+                            else:
+                                err = new Error('unknown error')
+                                Object.assign(err, e)
+                            raise err
+                ))
         )
-        return Promise.all(p)
+        return as_one_pack ? p[0] : Promise.all(p)
 
     def _import_amd(self, name, requester):
         # special case
@@ -259,81 +260,5 @@ class RS_require:
         req_chain = requester ? [requester] : []
         self.modules[name] = {req_chain:req_chain, exports: p, loaded: False}
         return p
-
-class Merge_call:
-    def merge(self, a):
-        self.cmd = 'merge'
-        self.args = a
-        return self
-
-
-def asyncer(fun):
-    merge_call = {}
-    def wrap(ctx):
-        def pret(ok, err):
-            def inner(f,  opt):
-                if opt:
-                    ret_v = opt.ret_v
-                    ret_throw =  opt.ret_throw
-                    merge_key = opt.merge_key
-
-                def _err(e, merge_key):
-                    err(e)
-                    if merge_key:
-                        merge_call[merge_key].map(def(cb): cb.err(e);)
-                        del merge_call[merge_key]
-
-                if ret_throw:
-                    v = ret_throw
-                else:
-                    try:
-                        f = f or fun.apply(ctx.self, ctx.args)
-                        v = f.next(ret_v)
-                    except as e:
-                        _err(e, merge_key)
-                        return
-                if isinstance(v.value, Merge_call):
-                    if v.value.cmd == 'get_keys':
-                        Promise.resolve(Object.keys(merge_call))
-                        .then(def(ret_v):  inner(f, {ret_v: ret_v, merge_key: merge_key}); )
-                    elif v.value.cmd == 'merge':
-                        if (p = merge_call[v.value.args]):
-                            p.push({ok: def(v): ok(v);, err: def(v): err(v);})
-                            return
-                        else:
-                            merge_key = v.value.args
-                            merge_call[merge_key] = []
-                            Promise.resolve(None).then(def(ret_v): inner(f, {ret_v: ret_v, merge_key: merge_key});)
-                    else:
-                        Promise.resolve(None).then(def(ret_v): inner(f, {ret_v: ret_v, merge_key: merge_key});)
-                elif not v.done:
-                    if isinstance(v.value, Promise):
-                        v.value.then(def(ret_v): inner(f, {ret_v: ret_v, merge_key: merge_key});,
-                                     def(e):
-                                         try:
-                                             v = f.throw(e)
-                                         except as e:
-                                             _err(e, merge_key)
-                                             return
-                                         inner(f, {ret_throw: v,  merge_key: merge_key});
-                        )
-                    else:
-                        Promise.resolve(v.value).then(def(ret_v): inner(f, {ret_v: ret_v, merge_key: merge_key});)
-                else:
-                    ok(v.value)
-                    if merge_key:
-                        merge_call[merge_key].map(def(cb): cb.ok(v.value);)
-                        del merge_call[merge_key]
-            inner()
-        return pret
-    ret =  def():
-        ctx = {self:this, args: arguments}
-        p = Promise(wrap(ctx))
-        return p
-    ret.__name__ = fun.__name__ or fun.name
-    return ret
-
-merge_call = Merge_call()
-asyncer.merge = merge_call.merge.bind(merge_call)
 
 RS_require()

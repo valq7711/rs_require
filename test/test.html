@@ -14,11 +14,11 @@
         });
 
         window.onerror = function(msg, url, lineNo, columnNo, error){
-            setTimeout(()=> post('../err', {msg, url, lineNo}), 1000);
+            setTimeout(()=> post('../err', {msg, url, lineNo, stack: error.stack}), 1000);
             return false;
         };
         window.done = (data)=> post('../done', data);
-        setTimeout(()=> post('../err', {msg:'timeout'}), 10000);
+        //setTimeout(()=> post('../err', {msg:'timeout'}), 10000);
     </script>
     <script src="rs_require.js"></script>
     <script src="index.js"></script>

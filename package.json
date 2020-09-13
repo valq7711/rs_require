@@ -1,0 +1,23 @@
+{
+  "name": "rs_require",
+  "description": "simple amd-loader",
+  "homepage": "https://github.com/valq7711/rs_require",
+  "keywords": [
+    "javascript",
+    "rapydscript",
+    "amd"
+  ],
+  "main": "rs_require.js",
+  "version": "1.0.0",
+  "license": "MIT",
+  "maintainers": [
+    {
+      "name": "Valeriy Kucherov",
+      "email": "valq7711@gmail.com"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/valq7711/rs_require.git"
+  }
+}
