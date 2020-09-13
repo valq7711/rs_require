@@ -9,18 +9,23 @@ def server_static(filename):
 @route('/err', method = 'POST')
 def err():
     print(request.json)
-    shutdown()
+    server.srv.server_close() 
+    raise Exception
     
 def shutdown():
-    server.srv.server_close() 
-    server.srv.shutdown()
+    pass
     
 
 server = WSGIRefServer(port=8000, host='127.0.0.1')
 
 def run_srv():
-    run(server=server)
+    try:
+        run(server=server)
+    except Exception:
+        pass
+    #server.srv.server_close() 
     print('shutdown')
+    server.srv.shutdown()
     
 
 run_srv()
