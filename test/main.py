@@ -10,7 +10,8 @@ def server_static(filename):
 def err():
     print(request.json)
     print('shutdown1')
-    sys.exit()
+    #sys.exit()
+    raise SystemExit('error')
     
 
 server = WSGIRefServer(port=8000, host='127.0.0.1')
