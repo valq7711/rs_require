@@ -1,0 +1,339 @@
+RS_REQ = 'amd'
+
+def parse_imports(args):
+    path = []
+    _path = []
+    def push_path(p):
+        nonlocal path, _path
+        path.push(p)
+        if v'typeof p' == 'string':
+            _path.push(p)
+        else:
+            _path.push.apply(_path, Object.keys(p))
+
+    args.forEach(def(it):
+        if v'typeof it' == 'string':
+            push_path(it)
+        else: # it is object
+            it = Object.assign({}, it)
+            from_ = /(.*?)\/?$/.exec(it['from'] or '')[1]
+            from_ = from_ and ( from_ + '/')
+            del it['from']
+            if it['import'] and Array.isArray(it['import']):
+                it['import'].forEach(def(p):
+                    p = p.startsWith('/') ? p : from_ + p
+                    push_path(p)
+                )
+            else: # {import: {Vue:'vue', ...} }
+                imports = it['import'] or it
+                pack = {}
+                p = ''
+                for v'p in imports':
+                    alias = imports[p]
+                    if alias == '':
+                         tmp = p.split('/')
+                         alias = tmp[-1]
+                    elif alias == '*':
+                        alias = p
+                    p = p.startsWith('/') ? p : from_ + p
+                    pack[p] = alias
+                push_path(pack)
+    )
+    return [path, _path]
+
+
+
+class Module:
+    @staticmethod
+    def __init_class__(import_amd):
+        this.prototype.import_amd = import_amd
+
+    def __init__(self, def_args, path):
+        self.loaded = False
+        self.ok_err = None
+        self.path = path or ''
+        self.id = v'typeof def_args[0]' == 'string' \
+            ? def_args.shift() \
+            : ''
+        raw_deps = Array.isArray(def_args[0]) \
+            ? def_args.shift() \
+            : []
+        self.init = def_args[0]
+        self.import_amd(raw_deps, self.path).then(self.run.bind(self)).catch(def(e): self.ok_err.err(e);)
+
+    def on_load_script(self, ok_err):
+        self.ok_err = ok_err
+        if self.loaded:
+            ok_err.ok(self.exports)
+
+    def run(self, deps):
+        exports = None
+        deps = deps.map(def(dep):
+            nonlocal exports
+            if dep is 'exports':
+                exports = {}
+                return exports
+            return  dep
+        )
+        _exports = self.init.apply(None, deps)
+        self.exports = exports or _exports
+        self.loaded = True
+        if self.ok_err:
+            self.ok_err.ok(self.exports)
+
+
+def doc_ready(arg_to_pass):
+    p = def(ok, err):
+        document.addEventListener('readystatechange',def():
+            if document.readyState == 'complete':
+                ok(arg_to_pass);
+        )
+    if document.readyState == 'complete':
+        return Promise.resolve(arg_to_pass)
+    return Promise(p)
+
+class RS_require:
+    def __init__(self):
+        CS = document.currentScript
+        src_ = CS.src.split('/')
+        self.config = {base_url:src_[:-1].join('/'), map:{}, path:{}}
+        self.modules = {}
+        self._modules = []
+        define = window.define = self.define.bind(self)
+        define.amd =  {}
+        Module.__init_class__(self.import_amd.bind(self))
+
+        rs_req = def(requester):
+            return {
+                'self': self,
+                'import': def(args):
+                    return self.import_amd(args, requester)
+                'asyncer': asyncer,
+                'config': def(cfg): Object.assign(self.config, cfg);
+            }
+        self.mount_module(RS_REQ, rs_req)
+        if window.Q:
+            self.mount_module('Q', Q)
+            del window.Q
+        if CS.dataset.main:
+            base_url = CS.dataset.main.split('/')
+            self.config.base_url = base_url[:-1].join('/')
+            self.import_amd(CS.dataset.main, RS_REQ)
+
+    def resolve_path(self, requester, path):
+        map_ = self.config.map.call \
+            ? self.config.map \
+            : def(k): return self.config.map[k];
+
+        is_url = /^https?:\/{2}/
+        if is_url.test(path):
+            path = map_(path, requester) or path
+            return [path, path]
+
+        if path.startsWith('/'):
+            path = map_(path, requester) or path
+            url = window.location.origin + path
+            return [path, url]
+
+        base = requester.split('/')
+        base = base[:-1]
+        if path.startsWith('./'):
+            path = base.join('/') + path[1:]
+            #return _resolve_path(requester, path)
+        elif path.startsWith('../'):
+            while True:
+                base = base[:-1]
+                path = path[3:]
+                if not path.startsWith('../'):
+                    break
+            base = base.join('/')
+            path = (base and (base  + '/')) + path
+            #return _resolve_path(requester, path)
+
+        path = map_(path, requester) or path
+        if is_url.test(path):
+            return [path, path]
+
+        _path = path.split('/')
+        if _path.length >= 2 and v'(base = self.config.path[_path[0]]) !== (void 0)':
+            return [path, (base and (base  + '/')) + _path[1:].join('/')]
+        base = self.config.base_url
+        return [path, (base and (base  + '/')) + path]
+
+    def mount_module(self, as_name, mod):
+        self.modules[as_name]  = {exports: mod, loaded: True, req_chain:[]}
+
+    def define(self, mod_id, req_list, cb):
+        def make_mod(path):
+            mod = Module([mod_id, req_list, cb], path)
+            self._modules.push(mod)
+            return mod
+        if (cs = document.currentScript) and cs.dataset.rs_req:
+            self.make_mod = make_mod
+        else:
+            make_mod()
+
+    def on_load_script(self, path, ok_err):
+        # if no make_mode then suppose that it is not amd-script
+        # - do nothing
+        if self.make_mod:
+            mod = self.make_mod(path)
+            self.make_mod = None
+            mod.on_load_script(ok_err)
+
+
+    def on_error(self, name, requester, e):
+        console.log('error on load: ', name, requester)
+
+    def import_amd(self, import_args, requester):
+        if v'typeof import_args' == 'string':
+            #imps = [import_args]
+            return self._import_amd(import_args, requester)
+        else:
+            imps = parse_imports(import_args)[0]
+        p = []
+        imps.forEach(def(it):
+            if v'typeof it' == 'string':
+                if it is 'exports':
+                    p.push(Promise.resolve({}))
+                else:
+                    p.push(self._import_amd(it, requester))
+            else: # make package
+                def pack_maker(it):
+                    return def(_pack):
+                        pack = {}
+                        i = 0
+                        path = ''
+                        for v'path in it':
+                            pack[it[path]] = _pack[i]
+                            i+=1
+                        return pack
+                _pack = []
+                path = ''
+                for v'path in it':
+                    _pack.push(self._import_amd(path, requester))
+                p.push(Promise.all(_pack).then(pack_maker(it)))
+        )
+        return Promise.all(p)
+
+    def _import_amd(self, name, requester):
+        # special case
+        if name is RS_REQ:
+            return  Promise.resolve(self.modules[name].exports(requester))
+
+        name, src  = self.resolve_path(requester, name)
+        if (mod = self.modules[name]):
+            if not mod.loaded:
+                if mod.req_chain.find(def(it): return it is name;):
+                    raise Error('Circular dependency: ' + name +  ' and ' + requester)
+                mod.req_chain.push(requester)
+            exp = mod.exports
+            #print(f'${name}: already in process')
+            return  isinstance(exp, Promise) ? exp :  Promise.resolve(exp)
+
+        ok_err = {}
+        s = document.createElement('script')
+        s.src = src + '.js'
+        s.async = True
+        s.onerror = def(e):
+            self.on_error(name, requester,e)
+            ok_err.err('loading error: ' + s.src)
+        s.dataset.rs_req = True
+        p = Promise(def(ok, err):
+                nonlocal ok_err
+                ok_err = {ok, err}
+        )
+
+        s.onload = def(): self.on_load_script(name, ok_err);
+        document.head.appendChild(s) # run define
+        p.then(def(exports):
+            if (mod = self.modules[name]):
+                mod.loaded = True
+                mod.exports = exports
+                #print(f'${name}: done!')
+            else:
+                raise Error('load_stack seems corrupted')
+        ).catch(def(e):
+            ok_err.err(e)
+        )
+        req_chain = requester ? [requester] : []
+        self.modules[name] = {req_chain:req_chain, exports: p, loaded: False}
+        return p
+
+class Merge_call:
+    def merge(self, a):
+        self.cmd = 'merge'
+        self.args = a
+        return self
+
+
+def asyncer(fun):
+    merge_call = {}
+    def wrap(ctx):
+        def pret(ok, err):
+            def inner(f,  opt):
+                if opt:
+                    ret_v = opt.ret_v
+                    ret_throw =  opt.ret_throw
+                    merge_key = opt.merge_key
+
+                def _err(e, merge_key):
+                    err(e)
+                    if merge_key:
+                        merge_call[merge_key].map(def(cb): cb.err(e);)
+                        del merge_call[merge_key]
+
+                if ret_throw:
+                    v = ret_throw
+                else:
+                    try:
+                        f = f or fun.apply(ctx.self, ctx.args)
+                        v = f.next(ret_v)
+                    except as e:
+                        _err(e, merge_key)
+                        return
+                if isinstance(v.value, Merge_call):
+                    if v.value.cmd == 'get_keys':
+                        Promise.resolve(Object.keys(merge_call))
+                        .then(def(ret_v):  inner(f, {ret_v: ret_v, merge_key: merge_key}); )
+                    elif v.value.cmd == 'merge':
+                        if (p = merge_call[v.value.args]):
+                            p.push({ok: def(v): ok(v);, err: def(v): err(v);})
+                            return
+                        else:
+                            merge_key = v.value.args
+                            merge_call[merge_key] = []
+                            Promise.resolve(None).then(def(ret_v): inner(f, {ret_v: ret_v, merge_key: merge_key});)
+                    else:
+                        Promise.resolve(None).then(def(ret_v): inner(f, {ret_v: ret_v, merge_key: merge_key});)
+                elif not v.done:
+                    if isinstance(v.value, Promise):
+                        v.value.then(def(ret_v): inner(f, {ret_v: ret_v, merge_key: merge_key});,
+                                     def(e):
+                                         try:
+                                             v = f.throw(e)
+                                         except as e:
+                                             _err(e, merge_key)
+                                             return
+                                         inner(f, {ret_throw: v,  merge_key: merge_key});
+                        )
+                    else:
+                        Promise.resolve(v.value).then(def(ret_v): inner(f, {ret_v: ret_v, merge_key: merge_key});)
+                else:
+                    ok(v.value)
+                    if merge_key:
+                        merge_call[merge_key].map(def(cb): cb.ok(v.value);)
+                        del merge_call[merge_key]
+            inner()
+        return pret
+    ret =  def():
+        ctx = {self:this, args: arguments}
+        p = Promise(wrap(ctx))
+        return p
+    ret.__name__ = fun.__name__ or fun.name
+    return ret
+
+merge_call = Merge_call()
+asyncer.merge = merge_call.merge.bind(merge_call)
+
+RS_require()

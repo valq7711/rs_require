@@ -5,16 +5,22 @@
     <title>test</title>
   </head>
   <body>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script>
+        const post = (url, data)=> fetch(url, {
+                method: 'POST', 
+                cache: 'no-cache', 
+                headers: { 'Content-Type': 'application/json'},
+                body: JSON.stringify(data) 
+        });
+
         window.onerror = function(msg, url, lineNo, columnNo, error){
-            setTimeout(()=> axios.post('../err', {msg, url, lineNo}), 1000);
+            setTimeout(()=> post('../err', {msg, url, lineNo}), 1000);
             return false;
-        }
+        };
+        window.done = (data)=> post('../done', data);
+        setTimeout(()=> post('../err', {msg:'timeout'}), 10000);
     </script>
-    <script src="foo.js"></script>
-    <script>
-        setTimeout(()=> axios.post('../done', {}), 1000);
-    </script>
+    <script src="rs_require.js"></script>
+    <script src="index.js"></script>
   </body>
 </html>

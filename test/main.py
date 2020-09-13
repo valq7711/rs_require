@@ -4,12 +4,16 @@ import os, sys
 
 EXIT_CODE = 0
 
-@route('/static/<filename>')
-def server_static(filename):
-    return static_file(filename, root = os.path.dirname(__file__))
+@route('/static/<path:path>')
+def server_static(path):
+    root = os.path.dirname(__file__)
+    if path == 'rs_require.js':
+        root = os.path.join(root, '../')
+    return static_file(path, root = root)
 
 @route('/done', method = 'POST')
 def done():
+    print(request.json)
     stop()
 
 @route('/err', method = 'POST')
