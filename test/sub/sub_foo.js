@@ -11,6 +11,7 @@ define({'foo':'', './sub_bar':'', 'there/foo':'there_foo'}, function(pack ){
     log('sub/sub_foo <- sub_bar:' + pack.sub_bar());
     log('sub/sub_foo <- there_foo:' + pack.there_foo());
     return ()=> 'sub/sub_foo';   
+
 });
 
 
