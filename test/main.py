@@ -1,5 +1,5 @@
 from bottle import route, run, static_file, request, WSGIRefServer
-from threading import Thread
+#from threading import Thread
 import os, sys
 
 @route('/static/<filename>')
@@ -21,10 +21,14 @@ server = WSGIRefServer(port=8000, host='127.0.0.1')
 def run_srv():
     run(server=server)
     print('shutdown')
+    
 
-t = Thread(target=run_srv)
-t.daemon = True
-t.start()
-t.join()
+run_srv()
 sys.exit('error')
+
+#t = Thread(target=run_srv)
+#t.daemon = True
+#t.start()
+#t.join()
+#sys.exit('error')
 
