@@ -1,8 +1,11 @@
 rs_require
 ===========
 
-[](https://api.travis-ci.com/valq7711/rs_require.svg?branch=master)
-Simple amd-loader written on RapydScript. 
+![Build status](https://api.travis-ci.com/valq7711/rs_require.svg?branch=master)
+
+Simple amd-loader written on [Rapydscript](https://github.com/atsepkov/RapydScript). 
+
+Usage:
 ```html
 ...
 <script src="rs_require.js"></script>
