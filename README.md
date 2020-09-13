@@ -26,7 +26,7 @@ define(['vue', 'vue-router'], function(vue, v_router){
     ... // do something using vue and v_router
 });
 ```
-
+if some configuration is required
 ```javascript
 //index.js
 define(['amd'], function(amd){
@@ -65,7 +65,7 @@ define(['amd'], function(amd){
     })
 }) 
 ```
-or even
+or 
 ```javascript
 define({
         'path/to/vue':'',
