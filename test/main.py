@@ -10,6 +10,8 @@ def server_static(filename):
 def err():
     print(request.json)
     server.srv.server_close() 
+    server.srv.shutdown()
+    print('shutdown')
     raise Exception
     
 def shutdown():
@@ -25,7 +27,6 @@ def run_srv():
         pass
     #server.srv.server_close() 
     print('shutdown')
-    server.srv.shutdown()
     
 
 run_srv()
