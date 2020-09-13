@@ -1,4 +1,4 @@
-function define1(){
+function define(){
     
 };
 
