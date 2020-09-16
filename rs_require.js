@@ -62,6 +62,7 @@
             self.import_amd(raw_deps, self.path).then(self.run.bind(self)).catch(function(e) {
                 if (self.ok_err) {
                     self.ok_err.err(e);
+                    throw e;
                 } else {
                     if (window.onerror) {
                         window.onerror(e.message, null, null, null, e);
@@ -222,7 +223,7 @@
                 var _pack, path;
                 if (typeof it === "string") {
                     if (it === "exports") {
-                        p.push(Promise.resolve({}));
+                        p.push(Promise.resolve("exports"));
                     } else {
                         p.push(self._import_amd(it, requester));
                     }
